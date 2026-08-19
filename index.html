@@ -42,10 +42,11 @@
   </div>
 
   <script>
-    const SUPABASE_URL = "https://pkmqfkhxfqjxpoiewqyp.supabase.co/auth/v1/callback";
-    // Public Anon Key set ki gayi hai
-    const SUPABASE_ANON_KEY = "sb_publishable_7MIC8kX4XxewOJ_ydWQ97w_BmMHsmFz";
-    
+    // Base URL bina kisi extra path ke
+    const SUPABASE_URL = "​https://pkmqfkhxfqjxpoiewqyp.supabase.co";
+    // Valid JWT Anon Key
+    const SUPABASE_ANON_KEY = "7MIC8kX4XxewOJ_ydWQ97w_BmMHsmFz";
+
     let supabaseClient;
     try {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -72,14 +73,15 @@
     }
 
     async function loginWithGoogle() {
-      if (!supabaseClient) return alert('Supabase error');
+      if (!supabaseClient) return alert('Supabase client error');
+      
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin
         }
       });
-      if (error) alert(error.message);
+      if (error) alert("Login Error: " + error.message);
     }
 
     async function logout() {
