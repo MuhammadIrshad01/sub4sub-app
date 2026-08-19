@@ -43,17 +43,25 @@
 
   <script>
     const SUPABASE_URL = "https://pkmqfkhxfqjxpoiewqyp.supabase.co/auth/v1/callback";
-    const SUPABASE_ANON_KEY = "sb_publishable_7MIC8kX4XxewOJ_ydWQ97w_BmMHsmFz"; // Yahan apni Anon Key dalein
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Public Anon Key set ki gayi hai
+    const SUPABASE_ANON_KEY = "sb_publishable_7MIC8kX4XxewOJ_ydWQ97w_BmMHsmFz";
+    
+    let supabaseClient;
+    try {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch (e) {
+      console.error("Supabase init error:", e);
+    }
 
     async function checkUser() {
-      const { data: { user } } = await supabase.auth.getUser();
+      if (!supabaseClient) return;
+      const { data: { user } } = await supabaseClient.auth.getUser();
       if (user) {
         document.getElementById('auth-section').style.display = 'none';
         document.getElementById('app-section').style.display = 'block';
         document.getElementById('user-email').innerText = user.email;
 
-        let { data: profile } = await supabase.from('profiles').select('points').eq('id', user.id).single();
+        let { data: profile } = await supabaseClient.from('profiles').select('points').eq('id', user.id).single();
         if (profile) document.getElementById('user-points').innerText = profile.points;
 
         loadChannels();
@@ -64,7 +72,8 @@
     }
 
     async function loginWithGoogle() {
-      const { error } = await supabase.auth.signInWithOAuth({
+      if (!supabaseClient) return alert('Supabase error');
+      const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin
@@ -74,16 +83,16 @@
     }
 
     async function logout() {
-      await supabase.auth.signOut();
+      await supabaseClient.auth.signOut();
       location.reload();
     }
 
     async function addChannel() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabaseClient.auth.getUser();
       const channelId = document.getElementById('channel-id').value;
       if (!channelId) return alert('Enter channel details');
 
-      const { error } = await supabase.from('channels').insert([{ user_id: user.id, channel_id: channelId, title: channelId }]);
+      const { error } = await supabaseClient.from('channels').insert([{ user_id: user.id, channel_id: channelId, title: channelId }]);
       if (error) alert(error.message);
       else {
         alert('Channel added!');
@@ -93,7 +102,7 @@
     }
 
     async function loadChannels() {
-      const { data: channels } = await supabase.from('channels').select('*');
+      const { data: channels } = await supabaseClient.from('channels').select('*');
       const listDiv = document.getElementById('channels-list');
       listDiv.innerHTML = '';
       if (channels) {
@@ -109,11 +118,10 @@
     }
 
     async function subscribe(channelId) {
-      alert('Open channel link and subscribe: https://youtube.com/' + channelId);
+      window.open('https://youtube.com/' + channelId, '_blank');
     }
 
     checkUser();
   </script>
 </body>
 </html>
-
