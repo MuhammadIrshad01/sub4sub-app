@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sub4Sub Web App</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; background: #f4f4f9; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    button { background: #ff0000; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #cc0000; }
+    input { width: 100%; padding: 8px; margin: 8px 0; box-sizing: border-box; }
+    .channel-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding: 10px 0; }
+  </style>
+</head>
+<body>
+
+  <h2>Sub4Sub Platform</h2>
+
+  <div id="auth-section" class="card">
+    <h3>Welcome!</h3>
+    <button onclick="loginWithGoogle()">Sign in with Google</button>
+  </div>
+
+  <div id="app-section" class="card" style="display: none;">
+    <h3>User Profile</h3>
+    <p><strong>Email:</strong> <span id="user-email"></span></p>
+    <p><strong>Points Balance:</strong> <span id="user-points">0</span> 🪙</p>
+    <button onclick="logout()">Logout</button>
+
+    <hr />
+
+    <h3>Promote Your Channel (-10 Points)</h3>
+    <input type="text" id="channel-id" placeholder="Enter Channel ID or Title" />
+    <button onclick="addChannel()">Add Channel</button>
+
+    <hr />
+
+    <h3>Available Channels to Subscribe (+10 Points)</h3>
+    <div id="channels-list"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://pkmqfkhxfqjxpoiewqyp.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"; // Yahan apni Anon Key dalein
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function checkUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('app-section').style.display = 'block';
+        document.getElementById('user-email').innerText = user.email;
+
+        let { data: profile } = await supabase.from('profiles').select('points').eq('id', user.id).single();
+        if (profile) document.getElementById('user-points').innerText = profile.points;
+
+        loadChannels();
+      } else {
+        document.getElementById('auth-section').style.display = 'block';
+        document.getElementById('app-section').style.display = 'none';
+      }
+    }
+
+    async function loginWithGoogle() {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      if (error) alert(error.message);
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      location.reload();
+    }
+
+    async function addChannel() {
+      const { data: { user } } = await supabase.auth.getUser();
+      const channelId = document.getElementById('channel-id').value;
+      if (!channelId) return alert('Enter channel details');
+
+      const { error } = await supabase.from('channels').insert([{ user_id: user.id, channel_id: channelId, title: channelId }]);
+      if (error) alert(error.message);
+      else {
+        alert('Channel added!');
+        document.getElementById('channel-id').value = '';
+        loadChannels();
+      }
+    }
+
+    async function loadChannels() {
+      const { data: channels } = await supabase.from('channels').select('*');
+      const listDiv = document.getElementById('channels-list');
+      listDiv.innerHTML = '';
+      if (channels) {
+        channels.forEach(ch => {
+          listDiv.innerHTML += `
+            <div class="channel-item">
+              <span>${ch.title}</span>
+              <button onclick="subscribe('${ch.channel_id}')">Subscribe (+10 Pts)</button>
+            </div>
+          `;
+        });
+      }
+    }
+
+    async function subscribe(channelId) {
+      alert('Open channel link and subscribe: https://youtube.com/' + channelId);
+    }
+
+    checkUser();
+  </script>
+</body>
+</html>
+
