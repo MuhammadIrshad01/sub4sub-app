@@ -12,7 +12,6 @@
       --card-bg: #ffffff;
       --text-dark: #22252a;
       --text-muted: #8e95a2;
-      --green-accent: #00c853;
       --gold-coin: #ffb300;
     }
 
@@ -57,15 +56,6 @@
     }
 
     /* Earn Screen Elements */
-    .time-bonus-card {
-      background: linear-gradient(135deg, #4b5563, #374151);
-      color: white;
-      border-radius: 18px;
-      padding: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
     .toggle-card { display: flex; justify-content: space-between; align-items: center; }
     .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
     .switch input { opacity: 0; width: 0; height: 0; }
@@ -73,6 +63,62 @@
     .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
     input:checked + .slider { background-color: var(--primary-blue); }
     input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Single Channel Box UI */
+    .channel-card {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .channel-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .avatar-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar {
+      width: 48px;
+      height: 48px;
+      background: var(--primary-blue);
+      color: white;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .action-row {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-join {
+      flex: 2;
+      background: var(--primary-blue);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .btn-next {
+      flex: 1;
+      background: #ffffff;
+      color: var(--text-dark);
+      border: 1px solid #d1d5db;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
     /* Tabs Bar inside Promote Screen */
     .tab-bar { display: flex; background: #e5e7eb; border-radius: 12px; padding: 4px; margin-bottom: 15px; }
@@ -97,7 +143,7 @@
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
       background: white; border-top: 1px solid #e5e7eb;
-      display: flex; justify-content: space-around; padding: 8px 0;
+      display: flex; justify-space-around: space-around; padding: 8px 0;
       box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
     }
     .nav-btn { border: none; background: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: 600; cursor: pointer; gap: 3px; }
@@ -117,7 +163,7 @@
   <div class="header-bar">
     <h1 id="page-title">Earn Coins</h1>
     <div class="coin-badge">
-      🪙 <span id="user-points">150</span>
+      🪙 <span id="user-points">50</span>
     </div>
   </div>
 
@@ -134,15 +180,6 @@
 
   <!-- 1. EARN SCREEN -->
   <div id="screen-earn" class="screen">
-    <div class="time-bonus-card card">
-      <div>
-        <h3>Time Bonus</h3>
-        <p style="font-size: 12px; opacity: 0.8;">Next claim in 05:25</p>
-        <h2 style="margin-top: 8px;">40 🪙</h2>
-      </div>
-      <button class="price-btn" style="background: #374151; border: 1px solid #6b7280;">05:25</button>
-    </div>
-
     <div class="card toggle-card">
       <div style="display: flex; align-items: center; gap: 10px;">
         <span style="font-size: 20px;">🔄</span>
@@ -154,7 +191,23 @@
       </label>
     </div>
 
-    <div id="channels-list"></div>
+    <!-- Single Channel Card View -->
+    <div class="card channel-card" id="active-channel-card">
+      <div class="channel-info">
+        <div class="avatar-title">
+          <div class="avatar" id="ch-avatar">CH</div>
+          <div>
+            <strong style="font-size: 16px; display: block;" id="ch-title">Loading...</strong>
+            <span style="font-size: 13px; color: var(--text-muted);" id="ch-sub">@channel</span>
+          </div>
+        </div>
+        <div class="price-btn" style="background: #fef3c7; color: #d97706;">+10 🪙</div>
+      </div>
+      <div class="action-row">
+        <button class="btn-join" onclick="joinActiveChannel()">+ Join</button>
+        <button class="btn-next" onclick="loadNextChannel()">Next →</button>
+      </div>
+    </div>
   </div>
 
   <!-- 2. PROMOTE SCREEN -->
@@ -262,6 +315,8 @@
 
     try { supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) {}
 
+    let channelsList = [];
+    let currentChannelIndex = 0;
     let selectedPackageCost = 0;
 
     function showScreen(screenId, title, btn) {
@@ -291,7 +346,7 @@
         document.getElementById('bottom-nav').style.display = 'flex';
         showScreen('earn', 'Earn Coins', document.querySelector('.nav-btn'));
         fetchPoints(user.id);
-        loadEarnChannels();
+        fetchEarnChannels();
       }
     }
 
@@ -316,19 +371,51 @@
       if (error) alert(error.message); else alert("Account created! Log In now.");
     }
 
-    async function loadEarnChannels() {
+    async function fetchEarnChannels() {
       const { data: channels } = await supabaseClient.from('channels').select('*');
-      const listDiv = document.getElementById('channels-list');
-      listDiv.innerHTML = '';
-      if (channels) {
-        channels.forEach(ch => {
-          listDiv.innerHTML += `
-            <div class="card item-row">
-              <div><strong>${ch.title}</strong></div>
-              <button class="price-btn" onclick="joinChannel('${ch.channel_id}')">+10 🪙</button>
-            </div>
-          `;
-        });
+      if (channels && channels.length > 0) {
+        channelsList = channels;
+        currentChannelIndex = 0;
+        displayCurrentChannel();
+      } else {
+        document.getElementById('ch-title').innerText = "No Channels Available";
+        document.getElementById('ch-sub').innerText = "Check back later";
+      }
+    }
+
+    function displayCurrentChannel() {
+      if (channelsList.length === 0) return;
+      const ch = channelsList[currentChannelIndex];
+      document.getElementById('ch-title').innerText = ch.title || "YouTube Channel";
+      document.getElementById('ch-sub').innerText = ch.channel_id;
+      document.getElementById('ch-avatar').innerText = (ch.title || "CH").substring(0, 2).toUpperCase();
+    }
+
+    function loadNextChannel() {
+      if (channelsList.length === 0) return;
+      currentChannelIndex = (currentChannelIndex + 1) % channelsList.length;
+      displayCurrentChannel();
+    }
+
+    async function joinActiveChannel() {
+      if (channelsList.length === 0) return;
+      const ch = channelsList[currentChannelIndex];
+      let ytUrl = ch.channel_id.startsWith('@') 
+        ? `https://youtube.com/${ch.channel_id}?sub_confirmation=1`
+        : `https://youtube.com/channel/${ch.channel_id}?sub_confirmation=1`;
+
+      window.open(ytUrl, '_blank');
+
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) return;
+
+      let currentPoints = parseInt(document.getElementById('user-points').innerText) || 0;
+      let updatedPoints = currentPoints + 10;
+
+      const { error } = await supabaseClient.from('profiles').update({ points: updatedPoints }).eq('id', user.id);
+      if (!error) {
+        document.getElementById('user-points').innerText = updatedPoints;
+        loadNextChannel();
       }
     }
 
@@ -349,6 +436,7 @@
       alert("Campaign Started!");
       closeModal();
       fetchPoints(user.id);
+      fetchEarnChannels();
     }
 
     checkUser();
