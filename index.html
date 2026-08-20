@@ -3,153 +3,352 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sub4Sub Web App</title>
+  <title>Sub4Sub App</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/dist/umd/supabase.min.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; background: #f4f4f9; }
-    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    button { background: #ff0000; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; }
-    button:hover { background: #cc0000; }
-    input { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-    .channel-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding: 10px 0; }
-    .btn-secondary { background: #555; }
-    .btn-secondary:hover { background: #333; }
+    :root {
+      --primary-blue: #00a6f4;
+      --bg-gray: #f2f4f8;
+      --card-bg: #ffffff;
+      --text-dark: #22252a;
+      --text-muted: #8e95a2;
+      --green-accent: #00c853;
+      --gold-coin: #ffb300;
+    }
+
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
+    body { background-color: var(--bg-gray); color: var(--text-dark); padding-bottom: 75px; }
+
+    /* Top Bar Header */
+    .header-bar {
+      background-color: var(--primary-blue);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,166,244,0.2);
+    }
+    .header-bar h1 { font-size: 24px; font-weight: 700; }
+    .coin-badge {
+      background: white;
+      color: var(--text-dark);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 800;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    /* Container Screens */
+    .screen { display: none; padding: 15px; max-width: 500px; margin: auto; }
+    .screen.active { display: block; }
+
+    /* Cards Styling */
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    /* Earn Screen Elements */
+    .time-bonus-card {
+      background: linear-gradient(135deg, #4b5563, #374151);
+      color: white;
+      border-radius: 18px;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .toggle-card { display: flex; justify-content: space-between; align-items: center; }
+    .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--primary-blue); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Tabs Bar inside Promote Screen */
+    .tab-bar { display: flex; background: #e5e7eb; border-radius: 12px; padding: 4px; margin-bottom: 15px; }
+    .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; font-weight: 600; border-radius: 8px; cursor: pointer; color: var(--text-muted); }
+    .tab-btn.active { background: var(--primary-blue); color: white; }
+
+    /* Instructions Box */
+    .req-box { background: #fef3c7; border: 1px dashed #f59e0b; border-radius: 14px; padding: 14px; margin-bottom: 15px; color: #b45309; font-size: 14px; }
+    .req-box ul { padding-left: 20px; margin-top: 5px; }
+
+    /* Item List Buttons */
+    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 14px; }
+    .item-title { font-weight: 700; font-size: 16px; }
+    .price-btn { background: var(--primary-blue); color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 15px; }
+    .badge-popular { background: #fef3c7; color: #d97706; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px; margin-left: 6px; }
+
+    /* Orders Tab Elements */
+    .progress-bar-bg { background: #e5e7eb; border-radius: 10px; height: 10px; width: 100%; overflow: hidden; margin: 10px 0; }
+    .progress-bar-fill { background: var(--primary-blue); height: 100%; border-radius: 10px; }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white; border-top: 1px solid #e5e7eb;
+      display: flex; justify-content: space-around; padding: 8px 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    .nav-btn { border: none; background: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; font-size: 12px; font-weight: 600; cursor: pointer; gap: 3px; }
+    .nav-btn.active { color: var(--primary-blue); }
+
+    /* Modals / Popups */
+    .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal-card { background: white; border-radius: 20px; padding: 20px; width: 100%; max-width: 400px; }
+    .input-field { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; margin: 15px 0; font-size: 15px; }
+    .btn-action { width: 100%; padding: 12px; background: var(--primary-blue); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 16px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <h2>Sub4Sub Platform</h2>
-
-  <!-- Auth Section -->
-  <div id="auth-section" class="card">
-    <h3>Sign In / Sign Up</h3>
-    <input type="email" id="email" placeholder="Enter your Email" />
-    <input type="password" id="password" placeholder="Enter Password" />
-    
-    <button onclick="loginWithEmail()">Log In</button>
-    <button class="btn-secondary" onclick="signUpWithEmail()">Sign Up (New Account)</button>
+  <!-- Top Bar -->
+  <div class="header-bar">
+    <h1 id="page-title">Earn Coins</h1>
+    <div class="coin-badge">
+      🪙 <span id="user-points">150</span>
+    </div>
   </div>
 
-  <!-- App Main Section -->
-  <div id="app-section" class="card" style="display: none;">
-    <h3>User Profile</h3>
-    <p><strong>Email:</strong> <span id="user-email"></span></p>
-    <p><strong>Points Balance:</strong> <span id="user-points">0</span> 🪙</p>
-    <button class="btn-secondary" onclick="logout()">Logout</button>
+  <!-- Auth Screen -->
+  <div id="screen-auth" class="screen active">
+    <div class="card" style="margin-top: 40px; text-align: center;">
+      <h2 style="margin-bottom: 15px;">Welcome Back</h2>
+      <input type="email" id="email" class="input-field" placeholder="Enter Email" />
+      <input type="password" id="password" class="input-field" placeholder="Enter Password" />
+      <button class="btn-action" onclick="loginWithEmail()" style="margin-bottom: 10px;">Log In</button>
+      <button class="btn-action" style="background: #4b5563;" onclick="signUpWithEmail()">Create New Account</button>
+    </div>
+  </div>
 
-    <hr />
+  <!-- 1. EARN SCREEN -->
+  <div id="screen-earn" class="screen">
+    <div class="time-bonus-card card">
+      <div>
+        <h3>Time Bonus</h3>
+        <p style="font-size: 12px; opacity: 0.8;">Next claim in 05:25</p>
+        <h2 style="margin-top: 8px;">40 🪙</h2>
+      </div>
+      <button class="price-btn" style="background: #374151; border: 1px solid #6b7280;">05:25</button>
+    </div>
 
-    <h3>Promote Your Channel (-10 Points)</h3>
-    <input type="text" id="channel-id" placeholder="Enter Channel ID or Title" />
-    <button onclick="addChannel()">Add Channel</button>
+    <div class="card toggle-card">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 20px;">🔄</span>
+        <strong style="font-size: 16px;">Auto Join Mode</strong>
+      </div>
+      <label class="switch">
+        <input type="checkbox">
+        <span class="slider"></span>
+      </label>
+    </div>
 
-    <hr />
-
-    <h3>Available Channels to Subscribe (+10 Points)</h3>
     <div id="channels-list"></div>
+  </div>
+
+  <!-- 2. PROMOTE SCREEN -->
+  <div id="screen-promote" class="screen">
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchPromoteTab('members')">👥 Members</button>
+      <button class="tab-btn" onclick="switchPromoteTab('views')">👁️ Views</button>
+      <button class="tab-btn" onclick="switchPromoteTab('reactions')">❤️ Reactions</button>
+    </div>
+
+    <div class="req-box">
+      <strong>⚠️ Requirements:</strong>
+      <ul>
+        <li>Channel/group must be PUBLIC</li>
+        <li>Turn OFF "Approve new members"</li>
+        <li>Must have a valid link/username</li>
+      </ul>
+    </div>
+
+    <div class="card item-row">
+      <div><span class="item-title">10 Members</span></div>
+      <button class="price-btn" onclick="openPromoteModal('10 Members', 100)">🪙 100</button>
+    </div>
+    <div class="card item-row">
+      <div><span class="item-title">100 Members</span></div>
+      <button class="price-btn" onclick="openPromoteModal('100 Members', 1000)">🪙 1,000</button>
+    </div>
+    <div class="card item-row">
+      <div><span class="item-title">250 Members</span><span class="badge-popular">★ POPULAR</span></div>
+      <button class="price-btn" onclick="openPromoteModal('250 Members', 2500)">🪙 2,500</button>
+    </div>
+    <div class="card item-row">
+      <div><span class="item-title">1,000 Members</span></div>
+      <button class="price-btn" onclick="openPromoteModal('1,000 Members', 10000)">🪙 10,000</button>
+    </div>
+  </div>
+
+  <!-- 3. ORDERS SCREEN -->
+  <div id="screen-orders" class="screen">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between;">
+        <strong>VibeVideos01</strong>
+        <span style="color: var(--primary-blue); font-weight: 700;">• Active</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 50%;"></div></div>
+      <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted);">
+        <span>5 / 10 (50%)</span>
+        <span>5 Remaining</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. BUY COINS SCREEN -->
+  <div id="screen-buy" class="screen">
+    <div class="card" style="background: #e0f2fe; border: 1px solid #bae6fd;">
+      <strong style="color: #0369a1;">🚀 Priority Processing</strong>
+      <p style="font-size: 13px; color: #0284c7; margin-top: 4px;">Orders from coin purchasers are prioritized and processed faster</p>
+    </div>
+
+    <div class="card item-row">
+      <span class="item-title">🪙 5,000</span>
+      <button class="price-btn">₹460</button>
+    </div>
+    <div class="card item-row">
+      <div><span class="item-title">🪙 12,500</span><span class="badge-popular">★ POPULAR</span></div>
+      <button class="price-btn">₹920</button>
+    </div>
+    <div class="card item-row">
+      <span class="item-title">🪙 40,000</span>
+      <button class="price-btn">₹2,300</button>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav" id="bottom-nav" style="display: none;">
+    <button class="nav-btn active" onclick="showScreen('earn', 'Earn Coins', this)">
+      <span>🪙</span>Earn
+    </button>
+    <button class="nav-btn" onclick="showScreen('promote', 'Promote', this)">
+      <span>📢</span>Promote
+    </button>
+    <button class="nav-btn" onclick="showScreen('orders', 'Orders', this)">
+      <span>📋</span>Orders
+    </button>
+    <button class="nav-btn" onclick="showScreen('buy', 'Buy Coins', this)">
+      <span>🛒</span>Buy
+    </button>
+  </div>
+
+  <!-- Promotion Link Modal -->
+  <div class="modal-overlay" id="modal-promote">
+    <div class="modal-card">
+      <h3 id="modal-title">Enter Channel/Group</h3>
+      <p id="modal-subtitle" style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;"></p>
+      <input type="text" id="target-link" class="input-field" placeholder="https://t.me/channel or ID" />
+      <button class="btn-action" onclick="submitCampaign()">Start Promotion</button>
+      <button class="btn-action" style="background: transparent; color: #6b7280; margin-top: 5px;" onclick="closeModal()">Cancel</button>
+    </div>
   </div>
 
   <script>
     const SUPABASE_URL = "https://pkmqfkhxfqjxpoiewqyp.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_7MIC8kX4XxewOJ_ydWQ97w_BmMHsmFz";
-
     let supabaseClient;
-    try {
-      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } catch (e) {
-      console.error("Supabase init error:", e);
+
+    try { supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) {}
+
+    let selectedPackageCost = 0;
+
+    function showScreen(screenId, title, btn) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`screen-${screenId}`).classList.add('active');
+      document.getElementById('page-title').innerText = title;
+      if (btn) btn.classList.add('active');
+    }
+
+    function openPromoteModal(packageText, cost) {
+      selectedPackageCost = cost;
+      document.getElementById('modal-title').innerText = "Enter Channel/Group";
+      document.getElementById('modal-subtitle').innerText = `${packageText} • ${cost} coins`;
+      document.getElementById('modal-promote').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-promote').classList.remove('active');
     }
 
     async function checkUser() {
       if (!supabaseClient) return;
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (user) {
-        document.getElementById('auth-section').style.display = 'none';
-        document.getElementById('app-section').style.display = 'block';
-        document.getElementById('user-email').innerText = user.email;
-
-        let { data: profile } = await supabaseClient.from('profiles').select('points').eq('id', user.id).single();
-        if (profile) document.getElementById('user-points').innerText = profile.points;
-
-        loadChannels();
-      } else {
-        document.getElementById('auth-section').style.display = 'block';
-        document.getElementById('app-section').style.display = 'none';
+        document.getElementById('screen-auth').classList.remove('active');
+        document.getElementById('bottom-nav').style.display = 'flex';
+        showScreen('earn', 'Earn Coins', document.querySelector('.nav-btn'));
+        fetchPoints(user.id);
+        loadEarnChannels();
       }
     }
 
-    // Email / Password Login
+    async function fetchPoints(userId) {
+      let { data: profile } = await supabaseClient.from('profiles').select('points').eq('id', userId).single();
+      if (profile) {
+        document.getElementById('user-points').innerText = profile.points;
+      }
+    }
+
     async function loginWithEmail() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-
-      if (!email || !password) return alert('Email aur Password dono bharein');
-
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
-
-      if (error) alert("Login Error: " + error.message);
-      else checkUser();
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) alert(error.message); else checkUser();
     }
 
-    // New User Sign Up
     async function signUpWithEmail() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-
-      if (!email || !password) return alert('Email aur Password dono bharein');
-
-      const { data, error } = await supabaseClient.auth.signUp({
-        email: email,
-        password: password,
-      });
-
-      if (error) {
-        alert("Sign Up Error: " + error.message);
-      } else {
-        alert("Account Create ho gaya! Agar Confirm Email ON hai toh Inbox check karein, warna Log In button dabayein.");
-      }
+      const { error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) alert(error.message); else alert("Account created! Log In now.");
     }
 
-    async function logout() {
-      await supabaseClient.auth.signOut();
-      location.reload();
-    }
-
-    async function addChannel() {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      const channelId = document.getElementById('channel-id').value;
-      if (!channelId) return alert('Enter channel details');
-
-      const { error } = await supabaseClient.from('channels').insert([{ user_id: user.id, channel_id: channelId, title: channelId }]);
-      if (error) alert(error.message);
-      else {
-        alert('Channel added!');
-        document.getElementById('channel-id').value = '';
-        loadChannels();
-      }
-    }
-
-    async function loadChannels() {
+    async function loadEarnChannels() {
       const { data: channels } = await supabaseClient.from('channels').select('*');
       const listDiv = document.getElementById('channels-list');
       listDiv.innerHTML = '';
       if (channels) {
         channels.forEach(ch => {
           listDiv.innerHTML += `
-            <div class="channel-item">
-              <span>${ch.title}</span>
-              <button style="width: auto;" onclick="subscribe('${ch.channel_id}')">Subscribe (+10 Pts)</button>
+            <div class="card item-row">
+              <div><strong>${ch.title}</strong></div>
+              <button class="price-btn" onclick="joinChannel('${ch.channel_id}')">+10 🪙</button>
             </div>
           `;
         });
       }
     }
 
-    async function subscribe(channelId) {
-      window.open('https://youtube.com/' + channelId, '_blank');
+    async function submitCampaign() {
+      const link = document.getElementById('target-link').value;
+      if (!link) return alert("Enter valid link");
+      
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      let currentPoints = parseInt(document.getElementById('user-points').innerText) || 0;
+
+      if (currentPoints < selectedPackageCost) {
+        return alert("Coins balance is insufficient!");
+      }
+
+      await supabaseClient.from('channels').insert([{ user_id: user.id, channel_id: link, title: link }]);
+      await supabaseClient.from('profiles').update({ points: currentPoints - selectedPackageCost }).eq('id', user.id);
+      
+      alert("Campaign Started!");
+      closeModal();
+      fetchPoints(user.id);
     }
 
     checkUser();
