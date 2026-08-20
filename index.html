@@ -8,26 +8,34 @@
   <style>
     body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; background: #f4f4f9; }
     .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    button { background: #ff0000; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+    button { background: #ff0000; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; }
     button:hover { background: #cc0000; }
-    input { width: 100%; padding: 8px; margin: 8px 0; box-sizing: border-box; }
+    input { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
     .channel-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding: 10px 0; }
+    .btn-secondary { background: #555; }
+    .btn-secondary:hover { background: #333; }
   </style>
 </head>
 <body>
 
   <h2>Sub4Sub Platform</h2>
 
+  <!-- Auth Section -->
   <div id="auth-section" class="card">
-    <h3>Welcome!</h3>
-    <button onclick="loginWithGoogle()">Sign in with Google</button>
+    <h3>Sign In / Sign Up</h3>
+    <input type="email" id="email" placeholder="Enter your Email" />
+    <input type="password" id="password" placeholder="Enter Password" />
+    
+    <button onclick="loginWithEmail()">Log In</button>
+    <button class="btn-secondary" onclick="signUpWithEmail()">Sign Up (New Account)</button>
   </div>
 
+  <!-- App Main Section -->
   <div id="app-section" class="card" style="display: none;">
     <h3>User Profile</h3>
     <p><strong>Email:</strong> <span id="user-email"></span></p>
     <p><strong>Points Balance:</strong> <span id="user-points">0</span> 🪙</p>
-    <button onclick="logout()">Logout</button>
+    <button class="btn-secondary" onclick="logout()">Logout</button>
 
     <hr />
 
@@ -70,16 +78,39 @@
       }
     }
 
-    async function loginWithGoogle() {
-      if (!supabaseClient) return alert('Supabase client error');
-      
-      const { error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
+    // Email / Password Login
+    async function loginWithEmail() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) return alert('Email aur Password dono bharein');
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password,
       });
+
       if (error) alert("Login Error: " + error.message);
+      else checkUser();
+    }
+
+    // New User Sign Up
+    async function signUpWithEmail() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) return alert('Email aur Password dono bharein');
+
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        alert("Sign Up Error: " + error.message);
+      } else {
+        alert("Account Create ho gaya! Agar Confirm Email ON hai toh Inbox check karein, warna Log In button dabayein.");
+      }
     }
 
     async function logout() {
@@ -110,7 +141,7 @@
           listDiv.innerHTML += `
             <div class="channel-item">
               <span>${ch.title}</span>
-              <button onclick="subscribe('${ch.channel_id}')">Subscribe (+10 Pts)</button>
+              <button style="width: auto;" onclick="subscribe('${ch.channel_id}')">Subscribe (+10 Pts)</button>
             </div>
           `;
         });
