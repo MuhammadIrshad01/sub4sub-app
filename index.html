@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sub4Sub Web App</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/dist/umd/supabase.min.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; background: #f4f4f9; }
     .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
@@ -42,11 +42,8 @@
   </div>
 
   <script>
-    // Fixed Base URL (Hidden character removed)
     const SUPABASE_URL = "https://pkmqfkhxfqjxpoiewqyp.supabase.co";
-    
-    // Valid JWT Anon Key
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrbXFma2h4ZnFqeHBvaWV3cXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIwNDI4ODEsImV4cCI6MjA1NzYxODg4MX0.1k-d5A0vUThB2j6t80G13gM8wM7e_92N0l6Jg7J6uJ4";
+    const SUPABASE_ANON_KEY = "sb_publishable_7MIC8kX4XxewOJ_ydWQ97w_BmMHsmFz";
 
     let supabaseClient;
     try {
